@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+//TODO tests of everything is missing
+
 public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableComponent {
 
     private final EnhancedFedora eFedora;
@@ -70,28 +72,27 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
                     continue;
                 }
 
-                PidCollectorHandler pidCollectorHandler = new PidCollectorHandler();
-                JPegNameCollectorHandler jPegNameCollectorHandler = new JPegNameCollectorHandler();
-                List<TreeEventHandler> handlers = Arrays.asList(pidCollectorHandler, jPegNameCollectorHandler);
+                CollectorHandler collectorHandler = new CollectorHandler();
+                List<TreeEventHandler> handlers = Arrays.asList((TreeEventHandler)collectorHandler);
                 EventRunner eventRunner = new EventRunner(createIterator(batch));
                 eventRunner.runEvents(handlers, resultCollector);
 
                 //TODO try finally, to make sure the mails are sent??
-                deleteBatch(batchObjectPid, pidCollectorHandler);
+                deleteBatch(batchObjectPid, collectorHandler.getFirst(),collectorHandler.getPids());
 
-                reportFiles(oldBatch, batch, jPegNameCollectorHandler.getFiles());
+                reportFiles(oldBatch, batch, collectorHandler.getFiles());
             }
         }
     }
 
-    private void deleteBatch(String batchObjectPid, PidCollectorHandler pidCollectorHandler) throws
+    private void deleteBatch(String batchObjectPid, String first, Iterable<String> pids) throws
                                                                                              BackendMethodFailedException,
                                                                                              BackendInvalidResourceException,
                                                                                              BackendInvalidCredsException {
-        for (String pid : pidCollectorHandler.getPids()) {
+        for (String pid : pids) {
             eFedora.deleteObject(pid, comment);
         }
-        eFedora.deleteRelation(batchObjectPid, null, relationPredicate, pidCollectorHandler.getFirst(), false, comment);
+        eFedora.deleteRelation(batchObjectPid, null, relationPredicate, first, false, comment);
     }
 
     private void reportFiles(Batch oldBatch, Batch batch, Set<String> files) throws MessagingException {
