@@ -21,6 +21,9 @@ public class ConfigConstants {
      */
     public static final String EMAIL_FROM_ADDRESS = "email.from.address";
 
-    public static final java.lang.String SUBJECT_PATTERN = "";//TODO
-    public static final java.lang.String BODY_PATTERN = "";//TODO
+    public static final java.lang.String SUBJECT_PATTERN = "email.subject.pattern";
+    public static final java.lang.String BODY_PATTERN = "email.body.pattern";
+    public static final java.lang.String EVENT_ID = "autonomous.eventID";
+    public static final java.lang.String DOMS_COMMIT_COMMENT = "doms.commit.comment";
+    public static final java.lang.String RELATION = "doms.batch.to.roundtrip.relation";
 }

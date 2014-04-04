@@ -27,7 +27,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
 
     private String comment;
-    private String hasPart;
+    private String relationPredicate;
 
     protected RepoCleanerRunnableComponent(Properties properties, EnhancedFedora eFedora) {
         super(properties);
@@ -35,6 +35,13 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
         simpleMailer = setupMailer(properties);
         fileDeletionSubject = properties.getProperty(ConfigConstants.SUBJECT_PATTERN);
         fileDeletionBody = properties.getProperty(ConfigConstants.BODY_PATTERN);
+        comment = properties.getProperty(ConfigConstants.DOMS_COMMIT_COMMENT);
+        relationPredicate = properties.getProperty(ConfigConstants.RELATION,
+                "info:fedora/fedora-system:def/relations-external#hasPart");
+
+        fileDeletionsrecipients = Arrays.asList(
+                properties.getProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES)
+                          .split("\\s*,\\s*"));
 
     }
 
@@ -48,7 +55,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     @Override
     public String getEventID() {
-        return null;
+        return getProperties().getProperty(ConfigConstants.EVENT_ID);
     }
 
     @Override
@@ -84,7 +91,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
         for (String pid : pidCollectorHandler.getPids()) {
             eFedora.deleteObject(pid, comment);
         }
-        eFedora.deleteRelation(batchObjectPid, null, hasPart, pidCollectorHandler.getFirst(), false, comment);
+        eFedora.deleteRelation(batchObjectPid, null, relationPredicate, pidCollectorHandler.getFirst(), false, comment);
     }
 
     private void reportFiles(Batch oldBatch, Batch batch, Set<String> files) throws MessagingException {
@@ -113,10 +120,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     private String formatSubject(String fileDeletionSubject, Batch oldBatch, Batch batch) {
         return MessageFormat.format(
-                fileDeletionSubject,
-                batch.getBatchID(),
-                batch.getRoundTripNumber(),
-                oldBatch.getRoundTripNumber());
+                fileDeletionSubject, batch.getBatchID(), batch.getRoundTripNumber(), oldBatch.getRoundTripNumber());
     }
 
 }
