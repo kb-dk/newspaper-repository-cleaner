@@ -9,6 +9,9 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.TreeE
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Collect pids and urls
+ */
 public class CollectorHandler implements TreeEventHandler {
 
     private String first = null;
@@ -16,10 +19,36 @@ public class CollectorHandler implements TreeEventHandler {
     private Set<String> files = new HashSet<>();
 
 
+    /**
+     * The jp2 filenames collected
+     * @return
+     */
     public Set<String> getFiles() {
         return files;
     }
 
+    /**
+     * The first pid collected. This shold be the round trip obejct
+     * @return
+     */
+    public String getFirst() {
+        return first;
+    }
+
+    /**
+     * The list of pids collected, including the first
+     * @return
+     */
+    public Set<String> getPids() {
+        return pids;
+    }
+
+
+    /**
+     * Collect the pid by the getLocation() method on the event. If the event is a DataFileNodeBeginsParsingEvent, collect
+     * the event name.
+     * @param event the event
+     */
     @Override
     public void handleNodeBegin(NodeBeginsParsingEvent event) {
         String pid = event.getLocation();
@@ -34,26 +63,32 @@ public class CollectorHandler implements TreeEventHandler {
 
     }
 
+    /**
+     * Empty
+     * @param event
+     */
     @Override
     public void handleNodeEnd(NodeEndParsingEvent event) {
         //nothing
     }
 
+    /**
+     * Empty
+     *
+     * @param event
+     */
     @Override
     public void handleAttribute(AttributeParsingEvent event) {
         //nothing
     }
 
+    /**
+     * Empty
+     *
+     */
     @Override
     public void handleFinish() {
 
     }
 
-    public String getFirst() {
-        return first;
-    }
-
-    public Set<String> getPids() {
-        return pids;
-    }
 }

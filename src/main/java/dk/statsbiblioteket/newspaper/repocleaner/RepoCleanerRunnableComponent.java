@@ -9,6 +9,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.EventRunner;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.TreeEventHandler;
+import org.slf4j.LoggerFactory;
 
 import javax.mail.MessagingException;
 import java.text.MessageFormat;
@@ -17,8 +18,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-//TODO tests of everything is missing
-
+/**
+ * When invoked on a batch, retrieve all batches with same id and a lower roundtripnumber. TreeIterate each of these
+ * collection the pids and jp2 file path. Delete the objects from DOMS. Then send a mail with all the file paths
+ * to designated recipients.
+ */
 public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableComponent {
 
     private final EnhancedFedora eFedora;
@@ -30,6 +34,8 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     private String comment;
     private String relationPredicate;
+    private static org.slf4j.Logger log = LoggerFactory.getLogger(RepoCleanerRunnableComponent.class);
+
 
     protected RepoCleanerRunnableComponent(Properties properties, EnhancedFedora eFedora) {
         super(properties);
@@ -38,12 +44,12 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
         fileDeletionSubject = properties.getProperty(ConfigConstants.SUBJECT_PATTERN);
         fileDeletionBody = properties.getProperty(ConfigConstants.BODY_PATTERN);
         comment = properties.getProperty(ConfigConstants.DOMS_COMMIT_COMMENT);
-        relationPredicate = properties.getProperty(ConfigConstants.RELATION,
-                "info:fedora/fedora-system:def/relations-external#hasPart");
+        relationPredicate = properties.getProperty(
+                ConfigConstants.RELATION, "info:fedora/fedora-system:def/relations-external#hasPart");
 
         fileDeletionsrecipients = Arrays.asList(
-                properties.getProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES)
-                          .split("\\s*,\\s*"));
+                properties.getProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES).split("\\s*,\\s*")
+                                               );
 
     }
 
@@ -73,36 +79,82 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
                 }
 
                 CollectorHandler collectorHandler = new CollectorHandler();
-                List<TreeEventHandler> handlers = Arrays.asList((TreeEventHandler)collectorHandler);
+                List<TreeEventHandler> handlers = Arrays.asList((TreeEventHandler) collectorHandler);
                 EventRunner eventRunner = new EventRunner(createIterator(batch));
                 eventRunner.runEvents(handlers, resultCollector);
 
+
                 //TODO try finally, to make sure the mails are sent??
-                deleteBatch(batchObjectPid, collectorHandler.getFirst(),collectorHandler.getPids());
+                deleteBatch(batchObjectPid, collectorHandler.getFirst(), collectorHandler.getPids());
 
                 reportFiles(oldBatch, batch, collectorHandler.getFiles());
             }
         }
     }
 
-    private void deleteBatch(String batchObjectPid, String first, Iterable<String> pids) throws
-                                                                                             BackendMethodFailedException,
-                                                                                             BackendInvalidResourceException,
-                                                                                             BackendInvalidCredsException {
+    /**
+     * Delete the batch from the metadata repository. Will delete all the "pids" and will remove the "relation" from
+     * "batchObjectPid" to "roundTripObjectPid"
+     *
+     * @param batchObjectPid     the pid of the batch object
+     * @param roundTripObjectPid the pid of the round trip object
+     * @param pids               the pids to delete.
+     *
+     * @throws BackendMethodFailedException    Stuff failed
+     * @throws BackendInvalidResourceException Deleting something that does not exist?
+     * @throws BackendInvalidCredsException    invalid credentials
+     * @see #relationPredicate
+     * @see #comment
+     */
+    protected void deleteBatch(String batchObjectPid, String roundTripObjectPid, Iterable<String> pids) throws
+                                                                                                        BackendMethodFailedException,
+                                                                                                        BackendInvalidCredsException,
+                                                                                                        BackendInvalidResourceException {
+
         for (String pid : pids) {
-            eFedora.deleteObject(pid, comment);
+            try {
+                eFedora.deleteObject(pid, comment);
+            } catch (BackendInvalidResourceException e) {
+                log.warn("Failed to delete object {}",pid,e);
+            }
         }
-        eFedora.deleteRelation(batchObjectPid, null, relationPredicate, first, false, comment);
+        eFedora.deleteRelation(batchObjectPid, null, relationPredicate, roundTripObjectPid, false, comment);
+
     }
 
-    private void reportFiles(Batch oldBatch, Batch batch, Set<String> files) throws MessagingException {
+    /**
+     * Send a mail to the recipients about the approval of the batch and the resulting deletion of the older batch
+     *
+     * @param oldBatch the old batch which is to be deleted
+     * @param batch    the batch that have been approved
+     * @param files    the files in the old batch which should be deleted
+     *
+     * @throws MessagingException if sending the mail failed
+     * @see #fileDeletionsrecipients
+     * @see #formatSubject(String, dk.statsbiblioteket.medieplatform.autonomous.Batch,
+     * dk.statsbiblioteket.medieplatform.autonomous.Batch)
+     * @see #formatBody(String, dk.statsbiblioteket.medieplatform.autonomous.Batch, dk.statsbiblioteket.medieplatform.autonomous.Batch,
+     * java.util.Set)
+     */
+    protected void reportFiles(Batch oldBatch, Batch batch, Set<String> files) throws MessagingException {
         simpleMailer.sendMail(
                 fileDeletionsrecipients,
                 formatSubject(fileDeletionSubject, oldBatch, batch),
                 formatBody(fileDeletionBody, oldBatch, batch, files));
     }
 
-    private String formatBody(String fileDeletionBody, Batch oldBatch, Batch batch, Set<String> files) {
+    /**
+     * Format the body of the mail
+     *
+     * @param fileDeletionBody The pattern for the mail body
+     * @param oldBatch         the old batch which is to be deleted
+     * @param batch            the batch that have been approved
+     * @param files            the files in the old batch which should be deleted
+     *
+     * @return the body as a string
+     * @see #formatSet(java.util.Set)
+     */
+    protected static String formatBody(String fileDeletionBody, Batch oldBatch, Batch batch, Set<String> files) {
         return MessageFormat.format(
                 fileDeletionBody,
                 batch.getBatchID(),
@@ -111,7 +163,15 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
                 formatSet(files));
     }
 
-    private String formatSet(Set<String> files) {
+    /**
+     * Format the set to of files as a string. Will perform the "/" to "_" nessesary when working with the
+     * bitrepository
+     *
+     * @param files the files
+     *
+     * @return the set of files as a string
+     */
+    protected static String formatSet(Set<String> files) {
         StringBuilder result = new StringBuilder();
         for (String file : files) {
             result.append("\n").append(file.replaceAll("/", "_"));
@@ -119,7 +179,16 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
         return result.toString();
     }
 
-    private String formatSubject(String fileDeletionSubject, Batch oldBatch, Batch batch) {
+    /**
+     * Format the subject for the message
+     *
+     * @param fileDeletionSubject the pattern for the subject
+     * @param oldBatch            the old batch which is to be deleted
+     * @param batch               the batch that have been approved
+     *
+     * @return the subject as a string
+     */
+    protected static String formatSubject(String fileDeletionSubject, Batch oldBatch, Batch batch) {
         return MessageFormat.format(
                 fileDeletionSubject, batch.getBatchID(), batch.getRoundTripNumber(), oldBatch.getRoundTripNumber());
     }

@@ -14,9 +14,8 @@ import java.util.Properties;
  */
 public class SimpleMailer {
 
+    private final Session session;
     private String from;
-    private String host;
-    private String port;
 
     /**
      * Constructor for this class.
@@ -27,8 +26,11 @@ public class SimpleMailer {
      */
     public SimpleMailer(String from, String host, String port) {
         this.from = from;
-        this.host = host;
-        this.port = port;
+        Properties props = new Properties();
+        props.setProperty("mail.smtp.host", host);
+        props.setProperty("mail.smtp.port", port);
+        session = Session.getDefaultInstance(props);
+
     }
 
     /**
@@ -41,10 +43,6 @@ public class SimpleMailer {
      * @throws MessagingException
      */
     public void sendMail(List<String> to, String subject, String text) throws MessagingException {
-        Properties props = new Properties();
-        props.setProperty("mail.smtp.host", host);
-        props.setProperty("mail.smtp.port", port);
-        javax.mail.Session session = Session.getDefaultInstance(props);
         MimeMessage message = new MimeMessage(session);
         message.setFrom(new InternetAddress(from));
         for (String recipient : to) {
