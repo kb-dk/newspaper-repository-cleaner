@@ -12,8 +12,10 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.TreeE
 import org.slf4j.LoggerFactory;
 
 import javax.mail.MessagingException;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -70,26 +72,36 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
     public void doWorkOnBatch(Batch batch, ResultCollector resultCollector) throws Exception {
         Integer roundTrip = batch.getRoundTripNumber();
         if (roundTrip > 1) {
+            //TODO what if several identical batches??
             String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getDomsID()).get(0);
             for (int i = 1; i < roundTrip; i++) {
+
+                //TODO think about storing intermediate values, such as the fileset or pidset
                 Batch oldBatch = new Batch(batch.getBatchID(), i);
-                List<String> pids = eFedora.findObjectFromDCIdentifier("path:" + oldBatch.getFullID());
-                if (pids.isEmpty()) {
-                    continue;
-                }
-
-                CollectorHandler collectorHandler = new CollectorHandler();
-                List<TreeEventHandler> handlers = Arrays.asList((TreeEventHandler) collectorHandler);
-                EventRunner eventRunner = new EventRunner(createIterator(batch));
-                eventRunner.runEvents(handlers, resultCollector);
-
-
-                //TODO try finally, to make sure the mails are sent??
-                deleteRoundTrip(batchObjectPid, collectorHandler.getRoundTripPid(), collectorHandler.getPids());
-
-                reportFiles(oldBatch, batch, collectorHandler.getFiles());
+                Set<String> files = cleanRoundTrip(oldBatch, resultCollector, batchObjectPid);
+                reportFiles(oldBatch, batch, files);
             }
         }
+    }
+
+    private Set<String> cleanRoundTrip(Batch batch, ResultCollector resultCollector, String batchObjectPid) throws
+                                                                                                            IOException,
+                                                                                                            BackendMethodFailedException,
+                                                                                                            BackendInvalidCredsException,
+                                                                                                            BackendInvalidResourceException {
+        if (eFedora.findObjectFromDCIdentifier("path:" + batch.getFullID()).isEmpty()) {
+            return Collections.emptySet();
+        }//Not empty, so there is a a round trip to delete
+
+        CollectorHandler collectorHandler = new CollectorHandler();
+        List<TreeEventHandler> handlers = Arrays.asList((TreeEventHandler) collectorHandler);
+        EventRunner eventRunner = new EventRunner(createIterator(batch));
+        eventRunner.runEvents(handlers, resultCollector);
+
+
+        //TODO try finally, to make sure the mails are sent??
+        deleteRoundTrip(batchObjectPid, collectorHandler.getRoundTripPid(), collectorHandler.getPids());
+        return collectorHandler.getFiles();
     }
 
     /**
@@ -137,10 +149,12 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
      * java.util.Set)
      */
     protected void reportFiles(Batch oldBatch, Batch batch, Set<String> files) throws MessagingException {
-        simpleMailer.sendMail(
-                fileDeletionsrecipients,
-                formatSubject(fileDeletionSubject, oldBatch, batch),
-                formatBody(fileDeletionBody, oldBatch, batch, files));
+        if (!files.isEmpty()) {
+            simpleMailer.sendMail(
+                    fileDeletionsrecipients,
+                    formatSubject(fileDeletionSubject, oldBatch, batch),
+                    formatBody(fileDeletionBody, oldBatch, batch, files));
+        }
     }
 
     /**
@@ -161,6 +175,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
                 batch.getRoundTripNumber(),
                 oldBatch.getRoundTripNumber(),
                 formatSet(files));
+        //TODO this set is BIG, does it work??
     }
 
     /**
