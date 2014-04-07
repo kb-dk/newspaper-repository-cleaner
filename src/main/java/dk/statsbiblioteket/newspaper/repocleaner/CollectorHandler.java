@@ -14,7 +14,7 @@ import java.util.Set;
  */
 public class CollectorHandler implements TreeEventHandler {
 
-    private String first = null;
+    private String roundTripPid = null;
     private Set<String> pids = new HashSet<>();
     private Set<String> files = new HashSet<>();
 
@@ -28,15 +28,15 @@ public class CollectorHandler implements TreeEventHandler {
     }
 
     /**
-     * The first pid collected. This shold be the round trip obejct
+     * The roundTripPid pid collected. This shold be the round trip obejct
      * @return
      */
-    public String getFirst() {
-        return first;
+    public String getRoundTripPid() {
+        return roundTripPid;
     }
 
     /**
-     * The list of pids collected, including the first
+     * The list of pids collected, including the roundTripPid
      * @return
      */
     public Set<String> getPids() {
@@ -52,8 +52,8 @@ public class CollectorHandler implements TreeEventHandler {
     @Override
     public void handleNodeBegin(NodeBeginsParsingEvent event) {
         String pid = event.getLocation();
-        if (first == null){
-            first = pid;
+        if (roundTripPid == null){
+            roundTripPid = pid;
         }
         pids.add(pid);
         if (event instanceof DataFileNodeBeginsParsingEvent) {

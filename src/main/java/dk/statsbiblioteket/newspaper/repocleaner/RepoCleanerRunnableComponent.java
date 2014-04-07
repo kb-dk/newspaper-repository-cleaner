@@ -85,7 +85,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
 
                 //TODO try finally, to make sure the mails are sent??
-                deleteBatch(batchObjectPid, collectorHandler.getFirst(), collectorHandler.getPids());
+                deleteRoundTrip(batchObjectPid, collectorHandler.getRoundTripPid(), collectorHandler.getPids());
 
                 reportFiles(oldBatch, batch, collectorHandler.getFiles());
             }
@@ -106,7 +106,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
      * @see #relationPredicate
      * @see #comment
      */
-    protected void deleteBatch(String batchObjectPid, String roundTripObjectPid, Iterable<String> pids) throws
+    protected void deleteRoundTrip(String batchObjectPid, String roundTripObjectPid, Iterable<String> pids) throws
                                                                                                         BackendMethodFailedException,
                                                                                                         BackendInvalidCredsException,
                                                                                                         BackendInvalidResourceException {
