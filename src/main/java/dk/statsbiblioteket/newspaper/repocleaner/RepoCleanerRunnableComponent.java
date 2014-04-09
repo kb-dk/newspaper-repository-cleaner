@@ -15,10 +15,10 @@ import javax.mail.MessagingException;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * When invoked on a batch, retrieve all batches with same id and a lower roundtripnumber. TreeIterate each of these
@@ -73,24 +73,24 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
         Integer roundTrip = batch.getRoundTripNumber();
         if (roundTrip > 1) {
             //TODO what if several identical batches??
-            String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getDomsID()).get(0);
+            String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getBatchID()).get(0);
             for (int i = 1; i < roundTrip; i++) {
 
                 //TODO think about storing intermediate values, such as the fileset or pidset
                 Batch oldBatch = new Batch(batch.getBatchID(), i);
-                Set<String> files = cleanRoundTrip(oldBatch, resultCollector, batchObjectPid);
+                Collection<String> files = cleanRoundTrip(oldBatch, resultCollector, batchObjectPid);
                 reportFiles(oldBatch, batch, files);
             }
         }
     }
 
-    private Set<String> cleanRoundTrip(Batch batch, ResultCollector resultCollector, String batchObjectPid) throws
+    private Collection<String> cleanRoundTrip(Batch batch, ResultCollector resultCollector, String batchObjectPid) throws
                                                                                                             IOException,
                                                                                                             BackendMethodFailedException,
                                                                                                             BackendInvalidCredsException,
                                                                                                             BackendInvalidResourceException {
         if (eFedora.findObjectFromDCIdentifier("path:" + batch.getFullID()).isEmpty()) {
-            return Collections.emptySet();
+            return Collections.emptyList();
         }//Not empty, so there is a a round trip to delete
 
         CollectorHandler collectorHandler = new CollectorHandler();
@@ -145,10 +145,9 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
      * @see #fileDeletionsrecipients
      * @see #formatSubject(String, dk.statsbiblioteket.medieplatform.autonomous.Batch,
      * dk.statsbiblioteket.medieplatform.autonomous.Batch)
-     * @see #formatBody(String, dk.statsbiblioteket.medieplatform.autonomous.Batch, dk.statsbiblioteket.medieplatform.autonomous.Batch,
-     * java.util.Set)
+     * @see #formatBody(String, dk.statsbiblioteket.medieplatform.autonomous.Batch, dk.statsbiblioteket.medieplatform.autonomous.Batch, java.util.Collection)
      */
-    protected void reportFiles(Batch oldBatch, Batch batch, Set<String> files) throws MessagingException {
+    protected void reportFiles(Batch oldBatch, Batch batch, Collection<String> files) throws MessagingException {
         if (!files.isEmpty()) {
             simpleMailer.sendMail(
                     fileDeletionsrecipients,
@@ -166,15 +165,15 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
      * @param files            the files in the old batch which should be deleted
      *
      * @return the body as a string
-     * @see #formatSet(java.util.Set)
+     * @see #formatFiles(java.util.Collection)
      */
-    protected static String formatBody(String fileDeletionBody, Batch oldBatch, Batch batch, Set<String> files) {
+    protected static String formatBody(String fileDeletionBody, Batch oldBatch, Batch batch, Collection<String> files) {
         return MessageFormat.format(
                 fileDeletionBody,
                 batch.getBatchID(),
                 batch.getRoundTripNumber(),
                 oldBatch.getRoundTripNumber(),
-                formatSet(files));
+                formatFiles(files));
         //TODO this set is BIG, does it work??
     }
 
@@ -186,7 +185,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
      *
      * @return the set of files as a string
      */
-    protected static String formatSet(Set<String> files) {
+    protected static String formatFiles(Collection<String> files) {
         StringBuilder result = new StringBuilder();
         for (String file : files) {
             result.append("\n").append(file.replaceAll("/", "_"));
