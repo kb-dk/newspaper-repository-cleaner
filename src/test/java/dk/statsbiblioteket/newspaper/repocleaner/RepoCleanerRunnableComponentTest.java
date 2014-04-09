@@ -61,7 +61,7 @@ public class RepoCleanerRunnableComponentTest {
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2",
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2")
         );
-        String result = RepoCleanerRunnableComponent.formatSet(files);
+        String result = RepoCleanerRunnableComponent.formatFiles(files);
 
         assertEquals(
                 result,
