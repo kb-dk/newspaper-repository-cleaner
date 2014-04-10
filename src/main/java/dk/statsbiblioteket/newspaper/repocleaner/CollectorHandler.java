@@ -6,11 +6,10 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.common.NodeBeginsPa
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.common.NodeEndParsingEvent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.TreeEventHandler;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Collect pids and urls
@@ -19,7 +18,7 @@ public class CollectorHandler implements TreeEventHandler {
 
     private String roundTripPid = null;
     private Collection<String> pids = new HashSet<>();
-    private List<String> files = new ArrayList<>();
+    private SortedSet<String> files = new TreeSet<>();
 
 
     /**
@@ -91,7 +90,6 @@ public class CollectorHandler implements TreeEventHandler {
      */
     @Override
     public void handleFinish() {
-        Collections.sort(files);
     }
 
 }
