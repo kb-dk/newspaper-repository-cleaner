@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -86,12 +87,10 @@ public class RepoCleanerRunnableComponentIT {
                 creds, fedoraLocation, props.getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL), null);
 
         oldbatch = new Batch(BATCH_ID, OLD_ROUNDTRIP_NO);
-
         newbatch = new Batch(BATCH_ID, NEW_ROUNDTRIP_NO);
 
 
-        props.setProperty(
-                ConfigConstants.ITERATOR_FILESYSTEM_BATCHES_FOLDER, "target");
+        props.setProperty(ConfigConstants.ITERATOR_FILESYSTEM_BATCHES_FOLDER, "target");
 
 
         DomsEventStorageFactory domsEventClientFactory = new DomsEventStorageFactory();
@@ -127,10 +126,22 @@ public class RepoCleanerRunnableComponentIT {
 
     }
 
-    @AfterMethod(alwaysRun = true)
+    @AfterMethod(groups = "integrationTest")
     public void tearDown() throws Exception {
         logger.debug("Doing tearDown.");
-        greenMail.stop();
+        try {
+            props.setProperty(
+                    ConfigConstants.ITERATOR_USE_FILESYSTEM, "false");
+            RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora);
+            ResultCollector resultCollector = new ResultCollector("foo", "bar");
+            cleaner.doWorkOnBatch(new Batch(newbatch.getBatchID(), newbatch.getRoundTripNumber() + 1), resultCollector);
+            List<String> batches = fedora.findObjectFromDCIdentifier("path:B" + newbatch.getBatchID());
+            for (String batch : batches) {
+                fedora.deleteObject(batch,"deleting after repo cleaner integration test");
+            }
+        } finally {
+            greenMail.stop();
+        }
     }
 
 
@@ -176,7 +187,7 @@ public class RepoCleanerRunnableComponentIT {
 
 
     /**
-     * Full enrichment of a (medium) batch.
+     * Clean one batch.
      *
      * @throws Exception
      */
