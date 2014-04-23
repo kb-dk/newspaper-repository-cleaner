@@ -27,9 +27,9 @@
     </repositories>
 
     <scm>
-        <url>https://github.com/statsbiblioteket/newspaper-prompt-doms-ingester</url>
-        <connection>scm:git:https://github.com/statsbiblioteket/newspaper-prompt-doms-ingester.git</connection>
-        <developerConnection>scm:git:git@github.com:statsbiblioteket/newspaper-prompt-doms-ingester.git
+        <url>https://github.com/statsbiblioteket/newspaper-repository-cleaner</url>
+        <connection>scm:git:https://github.com/statsbiblioteket/newspaper-repository-cleaner.git</connection>
+        <developerConnection>scm:git:git@github.com:statsbiblioteket/newspaper-repository-cleaner.git
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
