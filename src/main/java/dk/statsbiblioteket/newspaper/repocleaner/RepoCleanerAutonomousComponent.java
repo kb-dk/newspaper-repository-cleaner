@@ -5,6 +5,8 @@ import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGenera
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.*;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
+import dk.statsbiblioteket.newspaper.mfpakintegration.MfPakThenSBOIAutonomousComponentUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +35,7 @@ public class RepoCleanerAutonomousComponent {
         log.info("Starting with args {}", new Object[]{args});
 
         //Parse the args to a properties construct
-        Properties properties = SBOIDomsAutonomousComponentUtils.parseArgs(args);
+        Properties properties = AutonomousComponentUtils.parseArgs(args);
 
         Credentials creds = new Credentials(
                 properties.getProperty(ConfigConstants.DOMS_USERNAME),
@@ -46,7 +48,7 @@ public class RepoCleanerAutonomousComponent {
         //make a new runnable component from the properties
         RunnableComponent component = new RepoCleanerRunnableComponent(properties,eFedora);
 
-        CallResult result = SBOIDomsAutonomousComponentUtils.startAutonomousComponent(properties, component);
+        CallResult result = MfPakThenSBOIAutonomousComponentUtils.startAutonomousComponent(properties, component);
         log.info(result.toString());
         return result.containsFailures();
     }
