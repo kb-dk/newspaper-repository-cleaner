@@ -35,7 +35,7 @@ public class RepoCleanerAutonomousComponent {
         log.info("Starting with args {}", new Object[]{args});
 
         //Parse the args to a properties construct
-        Properties properties = AutonomousComponentUtils.parseArgs(args);
+        Properties properties = MfPakThenSBOIAutonomousComponentUtils.parseArgs(args);
 
         Credentials creds = new Credentials(
                 properties.getProperty(ConfigConstants.DOMS_USERNAME),
