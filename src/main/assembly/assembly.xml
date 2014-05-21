@@ -25,10 +25,10 @@
             <directoryMode>775</directoryMode>
         </fileSet>
         <fileSet>
-            <filtered>true</filtered>
+            <filtered>false</filtered>
             <directory>src/main/config</directory>
             <outputDirectory>conf</outputDirectory>
-            <fileMode>555</fileMode>
+            <fileMode>755</fileMode>
             <directoryMode>775</directoryMode>
         </fileSet>
     </fileSets>
