@@ -1,23 +1,83 @@
 package dk.statsbiblioteket.newspaper.repocleaner;
 
+import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
+import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
+import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
+
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.contains;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 public class RepoCleanerRunnableComponentTest {
-    @Test
-    public void testDeleteBatch() throws Exception {
 
+    private static final String MOCKUUID = "uuid:21767d13-68ed-4455-ab6b-090473e7e51a";
+
+    @Test
+    public void testFailOnLargerRoundtrip() throws Exception {
+        Batch batch1 = new Batch("1234", 1);
+        Batch batch2 = new Batch("1234", 2);
+
+        EnhancedFedora efedora = mock(EnhancedFedora.class);
+        when(efedora.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(MOCKUUID));
+
+        DomsEventStorage domsStorage = mock(DomsEventStorage.class);
+        when(domsStorage.getAllRoundTrips("1234")).thenReturn(Arrays.asList(batch1, batch2));
+
+        SimpleMailer mailer = mock(SimpleMailer.class);
+
+        Properties props = new Properties();
+        props.setProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES, "test@example.org");
+
+        ResultCollector resultCollector = new ResultCollector("tool", "version", 100);
+        new RepoCleanerRunnableComponent(props, efedora, domsStorage, mailer).doWorkOnBatch(batch1, resultCollector);
+        assertFalse(resultCollector.isSuccess());
+        assertTrue(resultCollector.toReport().contains("higher roundtrip"));
     }
 
     @Test
-    public void testReportFiles() throws Exception {
+    public void testDeleteBatch() throws Exception {
+        Batch batch1 = new Batch("1234", 1);
+        Batch batch2 = new Batch("1234", 2);
 
+        EnhancedFedora efedora = mock(EnhancedFedora.class);
+        when(efedora.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(MOCKUUID));
+
+        DomsEventStorage domsStorage = mock(DomsEventStorage.class);
+        when(domsStorage.getAllRoundTrips("1234")).thenReturn(Arrays.asList(batch1, batch2));
+
+        SimpleMailer mailer = mock(SimpleMailer.class);
+
+        Properties props = new Properties();
+        props.setProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES, "test@example.org");
+        props.setProperty(ConfigConstants.SUBJECT_PATTERN, "Test");
+        props.setProperty(ConfigConstants.BODY_PATTERN, "Batch B{0}-RT{1,number,integer} approved. Please delete the following files from B{0}-RT{2,number,integer} from the bit repository\n\n{3}");
+        props.setProperty(
+                dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants.ITERATOR_FILESYSTEM_BATCHES_FOLDER,
+                Thread.currentThread().getContextClassLoader().getResource("batches").getPath());
+
+        ResultCollector resultCollector = new ResultCollector("tool", "version", 100);
+        new RepoCleanerRunnableComponent(props, efedora, domsStorage, mailer).doWorkOnBatch(batch2, resultCollector);
+        assertTrue(resultCollector.isSuccess());
+        //5 xml objects should be deleted
+        verify(efedora, times(5)).deleteObject(anyString(), anyString());
+        //1 file should be sent in mail should be deleted
+        verify(mailer, times(1)).sendMail((List<String>) any(), anyString(), contains("adresseavisen1759-1795-06-01-0006.jp2"));
     }
 
     @Test

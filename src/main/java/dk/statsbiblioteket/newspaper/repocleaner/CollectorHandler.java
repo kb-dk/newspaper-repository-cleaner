@@ -4,7 +4,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.iterator.common.AttributePar
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.common.DataFileNodeBeginsParsingEvent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.common.NodeBeginsParsingEvent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.common.NodeEndParsingEvent;
-import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.TreeEventHandler;
+import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.DefaultTreeEventHandler;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -14,7 +14,7 @@ import java.util.TreeSet;
 /**
  * Collect pids and urls
  */
-public class CollectorHandler implements TreeEventHandler {
+public class CollectorHandler extends DefaultTreeEventHandler {
 
     private String roundTripPid = null;
     private Collection<String> pids = new HashSet<>();

@@ -5,7 +5,6 @@ import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGenera
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.*;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
-import dk.statsbiblioteket.newspaper.mfpakintegration.MfPakThenSBOIAutonomousComponentUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +34,7 @@ public class RepoCleanerAutonomousComponent {
         log.info("Starting with args {}", new Object[]{args});
 
         //Parse the args to a properties construct
-        Properties properties = MfPakThenSBOIAutonomousComponentUtils.parseArgs(args);
+        Properties properties = SBOIDomsAutonomousComponentUtils.parseArgs(args);
 
         Credentials creds = new Credentials(
                 properties.getProperty(ConfigConstants.DOMS_USERNAME),
@@ -46,10 +45,22 @@ public class RepoCleanerAutonomousComponent {
 
 
         //make a new runnable component from the properties
-        RunnableComponent component = new RepoCleanerRunnableComponent(properties,eFedora);
+        RunnableComponent component = new RepoCleanerRunnableComponent(properties,eFedora,
+                                                                       new DomsEventStorageFactory().createDomsEventStorage(),
+                                                                       setupMailer(properties));
 
-        CallResult result = MfPakThenSBOIAutonomousComponentUtils.startAutonomousComponent(properties, component);
+        CallResult result = SBOIDomsAutonomousComponentUtils.startAutonomousComponent(properties, component);
         log.info(result.toString());
         return result.containsFailures();
     }
+
+    private static SimpleMailer setupMailer(Properties properties) {
+        return new SimpleMailer(
+                properties.getProperty(dk.statsbiblioteket.newspaper.repocleaner.ConfigConstants.EMAIL_FROM_ADDRESS),
+                properties.getProperty(dk.statsbiblioteket.newspaper.repocleaner.ConfigConstants.SMTP_HOST),
+                properties.getProperty(dk.statsbiblioteket.newspaper.repocleaner.ConfigConstants.SMTP_PORT));
+
+    }
+
+
 }

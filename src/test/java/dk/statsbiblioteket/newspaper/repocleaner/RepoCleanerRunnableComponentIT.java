@@ -45,7 +45,6 @@ public class RepoCleanerRunnableComponentIT {
     public static final int NEW_ROUNDTRIP_NO = 3;
     public static final int OLD_ROUNDTRIP_NO = 1;
 
-
     @BeforeMethod(groups = "integrationTest")
     public void setUp() throws Exception {
         logger.debug("Doing setUp.");
@@ -123,7 +122,6 @@ public class RepoCleanerRunnableComponentIT {
 
         generateTestBatch(newbatch);
         IngestRoundtripInDoms(newbatch);
-
     }
 
     @AfterMethod(groups = "integrationTest")
@@ -132,7 +130,8 @@ public class RepoCleanerRunnableComponentIT {
         try {
             props.setProperty(
                     ConfigConstants.ITERATOR_USE_FILESYSTEM, "false");
-            RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora);
+            RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora, domsEventClient,
+                                                                                    setupMailer(props));
             ResultCollector resultCollector = new ResultCollector("foo", "bar");
             cleaner.doWorkOnBatch(new Batch(newbatch.getBatchID(), newbatch.getRoundTripNumber() + 1), resultCollector);
             List<String> batches = fedora.findObjectFromDCIdentifier("path:B" + newbatch.getBatchID());
@@ -195,7 +194,8 @@ public class RepoCleanerRunnableComponentIT {
     public void testDoWorkOnBatch() throws Exception {
         props.setProperty(
                 ConfigConstants.ITERATOR_USE_FILESYSTEM, "false");
-        RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora);
+        RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora, domsEventClient,
+                                                                                setupMailer(props));
         ResultCollector resultCollector = new ResultCollector("foo", "bar");
         cleaner.doWorkOnBatch(newbatch, resultCollector);
         assertTrue(resultCollector.isSuccess(), resultCollector.toReport());
@@ -220,7 +220,13 @@ public class RepoCleanerRunnableComponentIT {
         assertTrue(found);
     }
 
+    private SimpleMailer setupMailer(Properties properties) {
+        return new SimpleMailer(
+                properties.getProperty(dk.statsbiblioteket.newspaper.repocleaner.ConfigConstants.EMAIL_FROM_ADDRESS),
+                properties.getProperty(dk.statsbiblioteket.newspaper.repocleaner.ConfigConstants.SMTP_HOST),
+                properties.getProperty(dk.statsbiblioteket.newspaper.repocleaner.ConfigConstants.SMTP_PORT));
 
+    }
 }
 
 

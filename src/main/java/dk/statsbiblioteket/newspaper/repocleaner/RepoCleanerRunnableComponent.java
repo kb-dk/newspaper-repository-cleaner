@@ -5,6 +5,7 @@ import dk.statsbiblioteket.doms.central.connectors.BackendInvalidResourceExcepti
 import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
+import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.EventRunner;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.mail.MessagingException;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,6 +31,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     private final EnhancedFedora eFedora;
     private final SimpleMailer simpleMailer;
+    private final DomsEventStorage domsEventStorage;
     private List<String> fileDeletionsrecipients;
     private String fileDeletionSubject;
     private String fileDeletionBody;
@@ -38,11 +41,11 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
     private String relationPredicate;
     private static org.slf4j.Logger log = LoggerFactory.getLogger(RepoCleanerRunnableComponent.class);
 
-
-    protected RepoCleanerRunnableComponent(Properties properties, EnhancedFedora eFedora) {
+    protected RepoCleanerRunnableComponent(Properties properties, EnhancedFedora eFedora,
+                                           DomsEventStorage domsEventStorage, SimpleMailer simpleMailer) {
         super(properties);
         this.eFedora = eFedora;
-        simpleMailer = setupMailer(properties);
+        this.simpleMailer = simpleMailer;
         fileDeletionSubject = properties.getProperty(ConfigConstants.SUBJECT_PATTERN);
         fileDeletionBody = properties.getProperty(ConfigConstants.BODY_PATTERN);
         comment = properties.getProperty(ConfigConstants.DOMS_COMMIT_COMMENT);
@@ -53,14 +56,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
                 properties.getProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES).split("\\s*,\\s*")
                                                );
 
-    }
-
-    private SimpleMailer setupMailer(Properties properties) {
-        return new SimpleMailer(
-                properties.getProperty(ConfigConstants.EMAIL_FROM_ADDRESS),
-                properties.getProperty(ConfigConstants.SMTP_HOST),
-                properties.getProperty(ConfigConstants.SMTP_PORT));
-
+        this.domsEventStorage = domsEventStorage;
     }
 
     @Override
@@ -70,17 +66,26 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     @Override
     public void doWorkOnBatch(Batch batch, ResultCollector resultCollector) throws Exception {
-        Integer roundTrip = batch.getRoundTripNumber();
-        if (roundTrip > 1) {
-            //TODO what if several identical batches??
-            String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getBatchID()).get(0);
-            for (int i = 1; i < roundTrip; i++) {
-
-                //TODO think about storing intermediate values, such as the fileset or pidset
-                Batch oldBatch = new Batch(batch.getBatchID(), i);
-                Collection<String> files = cleanRoundTrip(oldBatch, resultCollector, batchObjectPid);
-                reportFiles(oldBatch, batch, files);
+        Integer roundTripNumber = batch.getRoundTripNumber();
+        String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getBatchID()).get(0);
+        List<Batch> allRoundTrips = domsEventStorage.getAllRoundTrips(batch.getBatchID());
+        List<Batch> oldBatches = new ArrayList<>();
+        for (Batch roundTrip : allRoundTrips) {
+            if (roundTrip.equals(batch)) {
+                continue;
             }
+            if (roundTrip.getRoundTripNumber() > roundTripNumber) {
+                resultCollector.addFailure(batch.getFullID(), "exception", getClass().getName(),
+                                           "A roundtrip '" + roundTrip.getFullID()
+                                                   + "' with a higher roundtrip number exists! Will not attempt to clean."
+                );
+                return;
+            }
+            oldBatches.add(roundTrip);
+        }
+        for (Batch oldBatch : oldBatches) {
+            Collection<String> files = cleanRoundTrip(oldBatch, resultCollector, batchObjectPid);
+            reportFiles(oldBatch, batch, files);
         }
     }
 
@@ -95,8 +100,8 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
         CollectorHandler collectorHandler = new CollectorHandler();
         List<TreeEventHandler> handlers = Arrays.asList((TreeEventHandler) collectorHandler);
-        EventRunner eventRunner = new EventRunner(createIterator(batch));
-        eventRunner.runEvents(handlers, resultCollector);
+        EventRunner eventRunner = new EventRunner(createIterator(batch), handlers, resultCollector);
+        eventRunner.run();
 
 
         //TODO try finally, to make sure the mails are sent??
