@@ -24,7 +24,7 @@ import java.util.Properties;
 
 /**
  * When invoked on a batch, retrieve all batches with same id and a lower roundtripnumber. TreeIterate each of these
- * collection the pids and jp2 file path. Delete the objects from DOMS. Then send a mail with all the file paths
+ * collecting the pids and jp2 file path. Delete the objects from DOMS. Then send a mail with all the file paths
  * to designated recipients.
  */
 public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableComponent {
