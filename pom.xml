@@ -80,7 +80,7 @@
         <dependency>
             <groupId>dk.statsbiblioteket.newspaper</groupId>
             <artifactId>sboi-doms-autonomous-component</artifactId>
-            <version>1.10-SNAPSHOT</version>
+            <version>1.10</version>
             <exclusions>
                 <exclusion>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -92,13 +92,13 @@
         <dependency>
             <groupId>dk.statsbiblioteket.newspaper</groupId>
             <artifactId>tree-processor-runnable-component</artifactId>
-            <version>1.10-SNAPSHOT</version>
+            <version>1.10</version>
         </dependency>
 
         <dependency>
             <groupId>dk.statsbiblioteket.newspaper</groupId>
             <artifactId>newspaper-prompt-doms-ingester</artifactId>
-            <version>1.5-SNAPSHOT</version>
+            <version>1.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
