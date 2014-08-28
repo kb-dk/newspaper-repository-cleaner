@@ -1,3 +1,6 @@
+1.3
+* Stop using hardcoded host and credentials for DomsEventStorageFactory, use those from config instead
+
 1.2
 * Updated to version 1.10 of batch event framework
 * Minor cleanups in sample configuration
