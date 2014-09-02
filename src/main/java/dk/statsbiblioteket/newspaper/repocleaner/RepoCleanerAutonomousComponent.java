@@ -3,13 +3,18 @@ package dk.statsbiblioteket.newspaper.repocleaner;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
 import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
-import dk.statsbiblioteket.medieplatform.autonomous.*;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
+import dk.statsbiblioteket.medieplatform.autonomous.SBOIDomsAutonomousComponentUtils;
+import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
+import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorageFactory;
+import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
+import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.JAXBException;
+
 import java.io.IOException;
 import java.util.Properties;
 
@@ -43,11 +48,14 @@ public class RepoCleanerAutonomousComponent {
         EnhancedFedoraImpl eFedora = new EnhancedFedoraImpl(
                 creds, fedoraLocation, null, null);
 
+        DomsEventStorageFactory domsEventStorageFactory = new DomsEventStorageFactory();
+        domsEventStorageFactory.setFedoraLocation(properties.getProperty(ConfigConstants.DOMS_URL));
+        domsEventStorageFactory.setUsername(properties.getProperty(ConfigConstants.DOMS_USERNAME));
+        domsEventStorageFactory.setPassword(properties.getProperty(ConfigConstants.DOMS_PASSWORD));
+        DomsEventStorage domsEventStorage = domsEventStorageFactory.createDomsEventStorage();
 
         //make a new runnable component from the properties
-        RunnableComponent component = new RepoCleanerRunnableComponent(properties,eFedora,
-                                                                       new DomsEventStorageFactory().createDomsEventStorage(),
-                                                                       setupMailer(properties));
+        RunnableComponent component = new RepoCleanerRunnableComponent(properties, eFedora, domsEventStorage, setupMailer(properties));
 
         CallResult result = SBOIDomsAutonomousComponentUtils.startAutonomousComponent(properties, component);
         log.info(result.toString());
