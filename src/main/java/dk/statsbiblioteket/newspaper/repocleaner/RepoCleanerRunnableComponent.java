@@ -6,6 +6,7 @@ import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.EventRunner;
@@ -31,7 +32,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     private final EnhancedFedora eFedora;
     private final SimpleMailer simpleMailer;
-    private final DomsEventStorage domsEventStorage;
+    private final NewspaperDomsEventStorage domsEventStorage;
     private List<String> fileDeletionsrecipients;
     private String fileDeletionSubject;
     private String fileDeletionBody;
@@ -42,7 +43,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
     private static org.slf4j.Logger log = LoggerFactory.getLogger(RepoCleanerRunnableComponent.class);
 
     protected RepoCleanerRunnableComponent(Properties properties, EnhancedFedora eFedora,
-                                           DomsEventStorage domsEventStorage, SimpleMailer simpleMailer) {
+                                           NewspaperDomsEventStorage domsEventStorage, SimpleMailer simpleMailer) {
         super(properties);
         this.eFedora = eFedora;
         this.simpleMailer = simpleMailer;
@@ -65,7 +66,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
     }
 
     @Override
-    public void doWorkOnBatch(Batch batch, ResultCollector resultCollector) throws Exception {
+    public void doWorkOnItem(Batch batch, ResultCollector resultCollector) throws Exception {
         Integer roundTripNumber = batch.getRoundTripNumber();
         String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getBatchID()).get(0);
         List<Batch> allRoundTrips = domsEventStorage.getAllRoundTrips(batch.getBatchID());

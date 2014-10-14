@@ -8,6 +8,8 @@ import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorageFactory;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorage;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorageFactory;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.newspaper.promptdomsingester.component.RunnablePromptDomsIngester;
 import org.slf4j.Logger;
@@ -35,7 +37,7 @@ public class RepoCleanerRunnableComponentIT {
     private GreenMail greenMail;
     private String fileDeletionSubjectPattern;
     private String fileDeletionBodyPattern;
-    private DomsEventStorage domsEventClient;
+    private NewspaperDomsEventStorage domsEventClient;
     private Properties props;
     Batch oldbatch;
     Batch newbatch;
@@ -92,24 +94,16 @@ public class RepoCleanerRunnableComponentIT {
         props.setProperty(ConfigConstants.ITERATOR_FILESYSTEM_BATCHES_FOLDER, "target");
 
 
-        DomsEventStorageFactory domsEventClientFactory = new DomsEventStorageFactory();
+        NewspaperDomsEventStorageFactory domsEventClientFactory = new NewspaperDomsEventStorageFactory();
         domsEventClientFactory.setFedoraLocation(props.getProperty(ConfigConstants.DOMS_URL));
         domsEventClientFactory.setUsername(props.getProperty(ConfigConstants.DOMS_USERNAME));
         domsEventClientFactory.setPassword(props.getProperty(ConfigConstants.DOMS_PASSWORD));
         domsEventClientFactory.setPidGeneratorLocation(props.getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL));
         logger.debug("Creating doms client");
         domsEventClient = domsEventClientFactory.createDomsEventStorage();
-        domsEventClient.addEventToBatch(
-                newbatch.getBatchID(),
-                newbatch.getRoundTripNumber(),
-                "repoCleanerIntegrationTest",
-                new Date(),
-                "",
-                "Data_Received",
-                false);
-        domsEventClient.addEventToBatch(
-                oldbatch.getBatchID(),
-                oldbatch.getRoundTripNumber(),
+        domsEventClient.addEventToItem(newbatch, "repoCleanerIntegrationTest", new Date(), "", "Data_Received", false);
+        domsEventClient.addEventToItem(
+                oldbatch,
                 "repoCleanerIntegrationTest",
                 new Date(),
                 "",
@@ -133,7 +127,7 @@ public class RepoCleanerRunnableComponentIT {
             RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora, domsEventClient,
                                                                                     setupMailer(props));
             ResultCollector resultCollector = new ResultCollector("foo", "bar");
-            cleaner.doWorkOnBatch(new Batch(newbatch.getBatchID(), newbatch.getRoundTripNumber() + 1), resultCollector);
+            cleaner.doWorkOnItem(new Batch(newbatch.getBatchID(), newbatch.getRoundTripNumber() + 1), resultCollector);
             List<String> batches = fedora.findObjectFromDCIdentifier("path:B" + newbatch.getBatchID());
             for (String batch : batches) {
                 fedora.deleteObject(batch,"deleting after repo cleaner integration test");
@@ -174,12 +168,12 @@ public class RepoCleanerRunnableComponentIT {
     }
 
 
-    private void IngestRoundtripInDoms(Batch batch) {
+    private void IngestRoundtripInDoms(Batch batch) throws Exception {
         props.setProperty(
                 ConfigConstants.ITERATOR_USE_FILESYSTEM, "true");
         RunnablePromptDomsIngester ingester = new RunnablePromptDomsIngester(props, fedora);
         ResultCollector resultCollector = new ResultCollector("foo", "bar");
-        ingester.doWorkOnBatch(batch, resultCollector);
+        ingester.doWorkOnItem(batch, resultCollector);
         assertTrue(resultCollector.isSuccess(), resultCollector.toReport());
         //TODO addDataReceived failure
     }
@@ -191,13 +185,13 @@ public class RepoCleanerRunnableComponentIT {
      * @throws Exception
      */
     @Test(groups = "integrationTest")
-    public void testDoWorkOnBatch() throws Exception {
+    public void testdoWorkOnItem() throws Exception {
         props.setProperty(
                 ConfigConstants.ITERATOR_USE_FILESYSTEM, "false");
         RepoCleanerRunnableComponent cleaner = new RepoCleanerRunnableComponent(props, fedora, domsEventClient,
                                                                                 setupMailer(props));
         ResultCollector resultCollector = new ResultCollector("foo", "bar");
-        cleaner.doWorkOnBatch(newbatch, resultCollector);
+        cleaner.doWorkOnItem(newbatch, resultCollector);
         assertTrue(resultCollector.isSuccess(), resultCollector.toReport());
 
         assertMailSent(oldbatch,newbatch);

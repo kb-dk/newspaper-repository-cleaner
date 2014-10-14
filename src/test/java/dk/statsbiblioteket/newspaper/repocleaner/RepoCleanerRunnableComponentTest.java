@@ -3,6 +3,7 @@ package dk.statsbiblioteket.newspaper.repocleaner;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 
 import org.testng.annotations.Test;
@@ -36,7 +37,7 @@ public class RepoCleanerRunnableComponentTest {
         EnhancedFedora efedora = mock(EnhancedFedora.class);
         when(efedora.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(MOCKUUID));
 
-        DomsEventStorage domsStorage = mock(DomsEventStorage.class);
+        NewspaperDomsEventStorage domsStorage = mock(NewspaperDomsEventStorage.class);
         when(domsStorage.getAllRoundTrips("1234")).thenReturn(Arrays.asList(batch1, batch2));
 
         SimpleMailer mailer = mock(SimpleMailer.class);
@@ -45,7 +46,7 @@ public class RepoCleanerRunnableComponentTest {
         props.setProperty(ConfigConstants.ALERT_EMAIL_ADDRESSES, "test@example.org");
 
         ResultCollector resultCollector = new ResultCollector("tool", "version", 100);
-        new RepoCleanerRunnableComponent(props, efedora, domsStorage, mailer).doWorkOnBatch(batch1, resultCollector);
+        new RepoCleanerRunnableComponent(props, efedora, domsStorage, mailer).doWorkOnItem(batch1, resultCollector);
         assertFalse(resultCollector.isSuccess());
         assertTrue(resultCollector.toReport().contains("higher roundtrip"));
     }
@@ -58,7 +59,7 @@ public class RepoCleanerRunnableComponentTest {
         EnhancedFedora efedora = mock(EnhancedFedora.class);
         when(efedora.findObjectFromDCIdentifier(anyString())).thenReturn(Arrays.asList(MOCKUUID));
 
-        DomsEventStorage domsStorage = mock(DomsEventStorage.class);
+        NewspaperDomsEventStorage domsStorage = mock(NewspaperDomsEventStorage.class);
         when(domsStorage.getAllRoundTrips("1234")).thenReturn(Arrays.asList(batch1, batch2));
 
         SimpleMailer mailer = mock(SimpleMailer.class);
@@ -72,7 +73,7 @@ public class RepoCleanerRunnableComponentTest {
                 Thread.currentThread().getContextClassLoader().getResource("batches").getPath());
 
         ResultCollector resultCollector = new ResultCollector("tool", "version", 100);
-        new RepoCleanerRunnableComponent(props, efedora, domsStorage, mailer).doWorkOnBatch(batch2, resultCollector);
+        new RepoCleanerRunnableComponent(props, efedora, domsStorage, mailer).doWorkOnItem(batch2, resultCollector);
         assertTrue(resultCollector.isSuccess());
         //5 xml objects should be deleted
         verify(efedora, times(5)).deleteObject(anyString(), anyString());

@@ -3,11 +3,15 @@ package dk.statsbiblioteket.newspaper.repocleaner;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
 import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
 import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
+import dk.statsbiblioteket.medieplatform.autonomous.Batch;
+import dk.statsbiblioteket.medieplatform.autonomous.BatchItemFactory;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
-import dk.statsbiblioteket.medieplatform.autonomous.SBOIDomsAutonomousComponentUtils;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorageFactory;
 import dk.statsbiblioteket.medieplatform.autonomous.CallResult;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperBatchAutonomousComponentUtils;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorage;
+import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorageFactory;
 import dk.statsbiblioteket.medieplatform.autonomous.RunnableComponent;
 
 import org.slf4j.Logger;
@@ -39,7 +43,7 @@ public class RepoCleanerAutonomousComponent {
         log.info("Starting with args {}", new Object[]{args});
 
         //Parse the args to a properties construct
-        Properties properties = SBOIDomsAutonomousComponentUtils.parseArgs(args);
+        Properties properties = NewspaperBatchAutonomousComponentUtils.parseArgs(args);
 
         Credentials creds = new Credentials(
                 properties.getProperty(ConfigConstants.DOMS_USERNAME),
@@ -48,16 +52,17 @@ public class RepoCleanerAutonomousComponent {
         EnhancedFedoraImpl eFedora = new EnhancedFedoraImpl(
                 creds, fedoraLocation, null, null);
 
-        DomsEventStorageFactory domsEventStorageFactory = new DomsEventStorageFactory();
+        NewspaperDomsEventStorageFactory domsEventStorageFactory = new NewspaperDomsEventStorageFactory();
         domsEventStorageFactory.setFedoraLocation(properties.getProperty(ConfigConstants.DOMS_URL));
         domsEventStorageFactory.setUsername(properties.getProperty(ConfigConstants.DOMS_USERNAME));
         domsEventStorageFactory.setPassword(properties.getProperty(ConfigConstants.DOMS_PASSWORD));
-        DomsEventStorage domsEventStorage = domsEventStorageFactory.createDomsEventStorage();
+        domsEventStorageFactory.setItemFactory(new BatchItemFactory());
+        NewspaperDomsEventStorage domsEventStorage = domsEventStorageFactory.createDomsEventStorage();
 
         //make a new runnable component from the properties
         RunnableComponent component = new RepoCleanerRunnableComponent(properties, eFedora, domsEventStorage, setupMailer(properties));
 
-        CallResult result = SBOIDomsAutonomousComponentUtils.startAutonomousComponent(properties, component);
+        CallResult result = NewspaperBatchAutonomousComponentUtils.startAutonomousComponent(properties, component);
         log.info(result.toString());
         return result.containsFailures();
     }
