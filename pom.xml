@@ -78,17 +78,7 @@
         </dependency>
 
 
-        <dependency>
-            <groupId>dk.statsbiblioteket.newspaper</groupId>
-            <artifactId>newspaper-batch-event-framework-common</artifactId>
-            <version>1.12-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
 
         <dependency>
             <groupId>dk.statsbiblioteket.newspaper</groupId>
