@@ -1,3 +1,6 @@
+1.4
+* Use newest version of item event framework. No functional changes for this module.
+
 1.3
 * Stop using hardcoded host and credentials for DomsEventStorageFactory, use those from config instead
 
