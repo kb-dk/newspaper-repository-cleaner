@@ -52,7 +52,7 @@ public class RepoCleanerAutonomousComponent {
         int fedoraRetries = Integer.parseInt(properties.getProperty(ConfigConstants.FEDORA_RETRIES, "1"));
         int fedoraDelayBetweenRetries = Integer.parseInt(properties.getProperty(ConfigConstants.FEDORA_DELAY_BETWEEN_RETRIES, "100"));
         EnhancedFedoraImpl eFedora = new EnhancedFedoraImpl(
-                creds, fedoraLocation, null, null, fedoraRetries, fedoraRetries, fedoraRetries, fedoraDelayBetweenRetries);
+                creds, fedoraLocation, null, null, fedoraRetries, fedoraDelayBetweenRetries);
 
         NewspaperDomsEventStorageFactory domsEventStorageFactory = new NewspaperDomsEventStorageFactory();
         domsEventStorageFactory.setFedoraLocation(properties.getProperty(ConfigConstants.DOMS_URL));
