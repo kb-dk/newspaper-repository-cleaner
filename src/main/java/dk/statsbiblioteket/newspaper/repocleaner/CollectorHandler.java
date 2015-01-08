@@ -59,6 +59,7 @@ public class CollectorHandler extends DefaultTreeEventHandler {
         }
         pids.add(pid);
         if (event instanceof DataFileNodeBeginsParsingEvent) {
+            //TODO remember that the file might not have been ingested in the bit repository just because the file object is in doms
             files.add(event.getName());
         }
 
