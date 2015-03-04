@@ -9,6 +9,7 @@ import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -89,13 +90,12 @@ public class RepoCleanerRunnableComponentTest {
         int oldRoundTrip = 2;
         int newRoundTrip = 4;
 
-        Set<String> files = new HashSet<>(
-                Arrays.asList(
+        Collection<String> files = Arrays.asList(
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0035A.jp2",
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0036A.jp2",
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2",
-                        "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2")
-        ); String result = RepoCleanerRunnableComponent.formatBody(
+                        "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2"); 
+        String result = RepoCleanerRunnableComponent.formatBody(
                 defaultPattern, new Batch(batchID, oldRoundTrip), new Batch(batchID, newRoundTrip), files);
         System.out.println(result);
 
@@ -103,9 +103,9 @@ public class RepoCleanerRunnableComponentTest {
                 result,"Batch B"+batchID + "-RT"+newRoundTrip+" approved. Please delete the following files from B"+batchID + "-RT"+oldRoundTrip+" from the bit repository\n" +
                        "\n" +
                        "\n" +
-                       "B"+batchID + "-RT"+oldRoundTrip+"_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2\n" +
-                       "B"+batchID + "-RT"+oldRoundTrip+"_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0036A.jp2\n" +
                        "B"+batchID + "-RT"+oldRoundTrip+"_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0035A.jp2\n" +
+                       "B"+batchID + "-RT"+oldRoundTrip+"_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0036A.jp2\n" +
+                       "B"+batchID + "-RT"+oldRoundTrip+"_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2\n" +
                        "B"+batchID + "-RT"+oldRoundTrip+"_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2");
 
     }
@@ -115,21 +115,20 @@ public class RepoCleanerRunnableComponentTest {
         String batchID = "4000";
         int oldRoundTrip = 2;
 
-        Set<String> files = new HashSet<>(
-                Arrays.asList(
+        Collection<String> files = Arrays.asList(
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0035A.jp2",
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0036A.jp2",
                         "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2",
-                        "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2")
-        );
+                        "B" + batchID + "-RT" + oldRoundTrip + "/" + batchID + "-01/2001-10-02-01/morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2");
+        
         String result = RepoCleanerRunnableComponent.formatFiles(files);
 
         assertEquals(
                 result,
                 "\n"+
-                "B" + batchID + "-RT" + oldRoundTrip + "_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2\n" +
-                "B" + batchID + "-RT" + oldRoundTrip + "_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0036A.jp2\n" +
                 "B" + batchID + "-RT" + oldRoundTrip + "_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0035A.jp2\n" +
+                "B" + batchID + "-RT" + oldRoundTrip + "_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0036A.jp2\n" +
+                "B" + batchID + "-RT" + oldRoundTrip + "_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0037A.jp2\n" +
                 "B" + batchID + "-RT" + oldRoundTrip + "_4000-01_2001-10-02-01_morgenavisenjyllandsposten-2001-10-02-01-0038A.jp2"
                     );
 
