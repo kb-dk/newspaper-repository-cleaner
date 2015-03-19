@@ -11,10 +11,14 @@ import java.util.HashSet;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Collect pids and urls
  */
 public class CollectorHandler extends DefaultTreeEventHandler {
+    private static Logger log = LoggerFactory.getLogger(CollectorHandler.class);
 
     private String roundTripPid = null;
     private Collection<String> pids = new HashSet<>();
@@ -54,6 +58,7 @@ public class CollectorHandler extends DefaultTreeEventHandler {
     @Override
     public void handleNodeBegin(NodeBeginsParsingEvent event) {
         String pid = event.getLocation();
+        log.trace("Found pid '{}' for event with name: '{}'", pid, event.getName());
         if (roundTripPid == null){
             roundTripPid = pid;
         }
@@ -61,6 +66,7 @@ public class CollectorHandler extends DefaultTreeEventHandler {
         if (event instanceof DataFileNodeBeginsParsingEvent) {
             //TODO remember that the file might not have been ingested in the bit repository just because the file object is in doms
             files.add(event.getName());
+            log.trace("Marking pid '{}' for deletion in bitrepository", pid);
         }
 
 

@@ -5,7 +5,6 @@ import dk.statsbiblioteket.doms.central.connectors.BackendInvalidResourceExcepti
 import dk.statsbiblioteket.doms.central.connectors.BackendMethodFailedException;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedora;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
-import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.NewspaperDomsEventStorage;
 import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
@@ -69,7 +68,9 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
     public void doWorkOnItem(Batch batch, ResultCollector resultCollector) throws Exception {
         Integer roundTripNumber = batch.getRoundTripNumber();
         String batchObjectPid = eFedora.findObjectFromDCIdentifier("path:B" + batch.getBatchID()).get(0);
+        log.trace("Found batch object, pid: '{}'", batchObjectPid);
         List<Batch> allRoundTrips = domsEventStorage.getAllRoundTrips(batch.getBatchID());
+        log.trace("All roundtrips for batch '{}': '{}'", batch.getBatchID(), allRoundTrips);
         List<Batch> oldBatches = new ArrayList<>();
         for (Batch roundTrip : allRoundTrips) {
             if (roundTrip.equals(batch)) {
@@ -84,8 +85,11 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
             }
             oldBatches.add(roundTrip);
         }
+        log.trace("Oldbatches up for cleaning: '{}'", oldBatches);
         for (Batch oldBatch : oldBatches) {
+            log.trace("Starting cleaning of roundtrip: '{}'", oldBatch.getFullID());
             Collection<String> files = cleanRoundTrip(oldBatch, resultCollector, batchObjectPid);
+            log.trace("Finished cleaning of roundtrip: '{}'", oldBatch.getFullID());
             reportFiles(oldBatch, batch, files);
         }
     }
@@ -96,6 +100,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
                                                                                                             BackendInvalidCredsException,
                                                                                                             BackendInvalidResourceException {
         if (eFedora.findObjectFromDCIdentifier("path:" + batch.getFullID()).isEmpty()) {
+            log.debug("Rountrip '{}' was found to be empty, nothing to clean here", batch.getFullID());
             return Collections.emptyList();
         }//Not empty, so there is a a round trip to delete
 
@@ -131,11 +136,13 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
         for (String pid : pids) {
             try {
+                log.trace("Deleting object with pid: '{}'", pid);
                 eFedora.deleteObject(pid, comment);
             } catch (BackendInvalidResourceException e) {
-                log.warn("Failed to delete object {}",pid,e);
+                log.warn("Failed to delete object '{}'", pid, e);
             }
         }
+        log.trace("Deleting relation with predicate: '{}' from '{}' to '{}'", relationPredicate, batchObjectPid, roundTripObjectPid);
         eFedora.deleteRelation(batchObjectPid, null, relationPredicate, roundTripObjectPid, false, comment);
 
     }
