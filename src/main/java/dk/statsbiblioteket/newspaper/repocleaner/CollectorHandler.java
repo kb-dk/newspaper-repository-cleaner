@@ -66,7 +66,7 @@ public class CollectorHandler extends DefaultTreeEventHandler {
         if (event instanceof DataFileNodeBeginsParsingEvent) {
             //TODO remember that the file might not have been ingested in the bit repository just because the file object is in doms
             files.add(event.getName());
-            log.trace("Marking pid '{}' for deletion in bitrepository", pid);
+            log.trace("Marking pid '{}' for name '{}' for deletion in bitrepository", pid, event.getName());
         }
 
 

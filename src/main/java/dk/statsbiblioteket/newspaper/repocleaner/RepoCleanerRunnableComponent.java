@@ -10,9 +10,12 @@ import dk.statsbiblioteket.medieplatform.autonomous.ResultCollector;
 import dk.statsbiblioteket.medieplatform.autonomous.TreeProcessorAbstractRunnableComponent;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.EventRunner;
 import dk.statsbiblioteket.medieplatform.autonomous.iterator.eventhandlers.TreeEventHandler;
+
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.mail.MessagingException;
+
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -39,7 +42,8 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
     private String comment;
     private String relationPredicate;
-    private static org.slf4j.Logger log = LoggerFactory.getLogger(RepoCleanerRunnableComponent.class);
+    private static Logger log = LoggerFactory.getLogger(RepoCleanerRunnableComponent.class);
+    private static Logger mailLog = LoggerFactory.getLogger("dk.statsbiblioteket.newspaper.repocleaner.mailLog");
 
     protected RepoCleanerRunnableComponent(Properties properties, EnhancedFedora eFedora,
                                            NewspaperDomsEventStorage domsEventStorage, SimpleMailer simpleMailer) {
@@ -136,7 +140,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
 
         for (String pid : pids) {
             try {
-                log.trace("Deleting object with pid: '{}'", pid);
+                log.trace("Deleting object with pid: '{}' from roundtrip pid '{}'", pid, roundTripObjectPid);
                 eFedora.deleteObject(pid, comment);
             } catch (BackendInvalidResourceException e) {
                 log.warn("Failed to delete object '{}'", pid, e);
@@ -162,10 +166,11 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
      */
     protected void reportFiles(Batch oldBatch, Batch batch, Collection<String> files) throws MessagingException {
         if (!files.isEmpty()) {
-            simpleMailer.sendMail(
-                    fileDeletionsrecipients,
-                    formatSubject(fileDeletionSubject, oldBatch, batch),
-                    formatBody(fileDeletionBody, oldBatch, batch, files));
+            String subject = formatSubject(fileDeletionSubject, oldBatch, batch);
+            mailLog.trace("Mail subject cleaning of batch '{}' with pid '{}': '{}'", oldBatch.getFullID(), oldBatch.getDomsID(), subject);
+            String body = formatBody(fileDeletionBody, oldBatch, batch, files);
+            mailLog.trace("Mail body cleaning of batch '{}' with pid '{}': '{}'", oldBatch.getFullID(), oldBatch.getDomsID(), body);
+            simpleMailer.sendMail(fileDeletionsrecipients, subject, body);
         }
     }
 
@@ -201,6 +206,7 @@ public class RepoCleanerRunnableComponent extends TreeProcessorAbstractRunnableC
     protected static String formatFiles(Collection<String> files) {
         StringBuilder result = new StringBuilder();
         for (String file : files) {
+            log.trace("Adding file '{}' to mail", file);
             result.append("\n").append(file.replaceAll("/", "_"));
         }
         return result.toString();

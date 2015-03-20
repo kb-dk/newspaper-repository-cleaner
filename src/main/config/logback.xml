@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <configuration scan="true">
   <property name="LOGFILE" value="${user.home}/logs/repository-cleaner.log"/>
+    <property name="LOGFILE_MAIL_LOG" value="${user.home}/logs/repository-cleaner-mail-log.log"/>
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <prudent>true</prudent>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
@@ -16,7 +17,27 @@
             <pattern>%date{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
+    
+    <appender name="FILE_MAIL_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <prudent>true</prudent>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOGFILE_MAIL_LOG}.%d{yyyy-MM-dd}</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <append>true</append>
+        <encoder>
+            <pattern>%date{ISO8601} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    
+    <logger name="dk.statsbiblioteket.newspaper.repocleaner.mailLog" level="TRACE" additivity="false">
+    	<appender-ref ref="FILE_MAIL_LOG"/>
+    </logger>
+    
     <logger name="dk.statsbiblioteket" level="INFO"/>
+    <logger name="dk.statsbiblioteket.newspaper.repocleaner" level="TRACE"/>
+    
+    
     <root level="WARN">
         <appender-ref ref="FILE"/>
     </root>
