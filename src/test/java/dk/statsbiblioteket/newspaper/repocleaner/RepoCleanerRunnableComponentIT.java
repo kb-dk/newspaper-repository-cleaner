@@ -101,8 +101,8 @@ public class RepoCleanerRunnableComponentIT {
         domsEventClientFactory.setPidGeneratorLocation(props.getProperty(ConfigConstants.DOMS_PIDGENERATOR_URL));
         logger.debug("Creating doms client");
         domsEventClient = domsEventClientFactory.createDomsEventStorage();
-        domsEventClient.addEventToItem(newbatch, "repoCleanerIntegrationTest", new Date(), "", "Data_Received", false);
-        domsEventClient.addEventToItem(
+        domsEventClient.appendEventToItem(newbatch, "repoCleanerIntegrationTest", new Date(), "", "Data_Received", false);
+        domsEventClient.appendEventToItem(
                 oldbatch,
                 "repoCleanerIntegrationTest",
                 new Date(),
