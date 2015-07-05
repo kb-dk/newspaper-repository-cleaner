@@ -2,7 +2,7 @@ package dk.statsbiblioteket.newspaper.repocleaner;
 
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
 import dk.statsbiblioteket.doms.central.connectors.fedora.pidGenerator.PIDGeneratorException;
-import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
+import dk.statsbiblioteket.sbutil.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.BatchItemFactory;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.CallResult;

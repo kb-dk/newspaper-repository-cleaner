@@ -3,7 +3,7 @@ package dk.statsbiblioteket.newspaper.repocleaner;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.ServerSetup;
 import dk.statsbiblioteket.doms.central.connectors.EnhancedFedoraImpl;
-import dk.statsbiblioteket.doms.webservices.authentication.Credentials;
+import dk.statsbiblioteket.sbutil.webservices.authentication.Credentials;
 import dk.statsbiblioteket.medieplatform.autonomous.Batch;
 import dk.statsbiblioteket.medieplatform.autonomous.ConfigConstants;
 import dk.statsbiblioteket.medieplatform.autonomous.DomsEventStorage;
